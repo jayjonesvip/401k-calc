@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>401k Visualizer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .input-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .results {
+            display: none;
+        }
+        
+        .results.active {
+            display: block;
+        }
+        
+        .totals {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .total-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .total-card h3 {
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+        
+        .total-card .amount {
+            font-size: 2em;
+            font-weight: bold;
+        }
+        
+        .sliders-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .slider-group {
+            margin-bottom: 25px;
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        
+        canvas {
+            max-height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 401k Retirement Calculator</h1>
+            <p>Plan your financial future with confidence</p>
+        </div>
+        
+        <div class="content">
+            <div class="input-section">
+                <h2 style="margin-bottom: 20px;">Your Information</h2>
+                
+                <div class="form-group">
+                    <label for="age">Current Age</label>
+                    <input type="number" id="age" min="18" max="64" value="30" placeholder="Enter your age">
+                </div>
+                
+                <div class="form-group">
+                    <label for="currentBalance">Current 401k Balance ($)</label>
+                    <input type="number" id="currentBalance" min="0" step="1000" value="25000" placeholder="Enter current balance">
+                </div>
+                
+                <div class="form-group">
+                    <label for="salary">Annual Gross Salary ($)</label>
+                    <input type="number" id="salary" min="0" step="1000" value="75000" placeholder="Enter your salary">
+                </div>
+                
+                <div class="form-group">
+                    <label for="contribution">Contribution Percentage (%)</label>
+                    <input type="number" id="contribution" min="0" max="100" step="0.5" value="6" placeholder="Enter percentage">
+                </div>
+                
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="employerMatch" checked>
+                        <label for="employerMatch" style="margin: 0;">Employer Match (matching up to 6%)</label>
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="calculate()">Calculate Retirement Plan</button>
+            </div>
+            
+            <div class="results" id="results">
+                <div class="totals" id="totals"></div>
+                
+                <div class="sliders-section">
+                    <h2 style="margin-bottom: 20px;">Adjust Your Plan</h2>
+                    
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>Contribution Percentage</span>
+                            <span id="contribValue">6%</span>
+                        </div>
+                        <input type="range" id="contribSlider" min="0" max="30" step="0.5" value="6" oninput="updateCalculation()">
+                    </div>
+                    
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>Annual Return Rate</span>
+                            <span id="roiValue">5%</span>
+                        </div>
+                        <input type="range" id="roiSlider" min="0" max="15" step="0.5" value="5" oninput="updateCalculation()">
+                    </div>
+                    
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>Annual Salary Raise</span>
+                            <span id="raiseValue">2%</span>
+                        </div>
+                        <input type="range" id="raiseSlider" min="0" max="10" step="0.25" value="2" oninput="updateCalculation()">
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="growthChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let chart;
+        let baseData = {};
+        
+        function calculate() {
+            const age = parseInt(document.getElementById('age').value);
+            const currentBalance = parseFloat(document.getElementById('currentBalance').value) || 0;
+            const salary = parseFloat(document.getElementById('salary').value);
+            const contribution = parseFloat(document.getElementById('contribution').value);
+            const hasMatch = document.getElementById('employerMatch').checked;
+            
+            if (!age || !salary || age < 18 || age > 64) {
+                alert('Please enter valid information');
+                return;
+            }
+            
+            baseData = { age, currentBalance, salary, hasMatch };
+            
+            document.getElementById('contribSlider').value = contribution;
+            document.getElementById('roiSlider').value = 5;
+            document.getElementById('raiseSlider').value = 2;
+            
+            updateCalculation();
+            document.getElementById('results').classList.add('active');
+        }
+        
+        function updateCalculation() {
+            const contrib = parseFloat(document.getElementById('contribSlider').value);
+            const roi = parseFloat(document.getElementById('roiSlider').value);
+            const annualRaise = parseFloat(document.getElementById('raiseSlider').value);
+            
+            document.getElementById('contribValue').textContent = contrib + '%';
+            document.getElementById('roiValue').textContent = roi + '%';
+            document.getElementById('raiseValue').textContent = annualRaise + '%';
+            
+            const yearsToRetirement = 65 - baseData.age;
+            let currentSalary = baseData.salary;
+            let balance = baseData.currentBalance;
+            const yearlyBalances = [balance];
+            let totalPersonal = 0;
+            let totalEmployer = 0;
+            
+            for (let year = 1; year <= yearsToRetirement; year++) {
+                const annualContribution = currentSalary * (contrib / 100);
+                const employerContribution = baseData.hasMatch ? currentSalary * Math.min(contrib, 6) / 100 : 0;
+                const totalAnnualContribution = annualContribution + employerContribution;
+                
+                balance = balance * (1 + roi / 100) + totalAnnualContribution;
+                yearlyBalances.push(balance);
+                
+                totalPersonal += annualContribution;
+                totalEmployer += employerContribution;
+                
+                currentSalary = currentSalary * (1 + annualRaise / 100);
+            }
+            
+            const totalContributions = totalPersonal + totalEmployer;
+            const earnings = balance - totalContributions - baseData.currentBalance;
+            
+            displayTotals(balance, totalContributions, totalPersonal, totalEmployer, earnings, baseData.currentBalance);
+            updateChart(yearlyBalances, baseData.age);
+        }
+        
+        function displayTotals(total, contributions, personal, employer, earnings, startingBalance) {
+            const totalsDiv = document.getElementById('totals');
+            totalsDiv.innerHTML = `
+                <div class="total-card">
+                    <h3>Total at Retirement</h3>
+                    <div class="amount">${total.toLocaleString('en-US', {maximumFractionDigits: 0})}</div>
+                </div>
+                <div class="total-card">
+                    <h3>Starting Balance</h3>
+                    <div class="amount">${startingBalance.toLocaleString('en-US', {maximumFractionDigits: 0})}</div>
+                </div>
+                <div class="total-card">
+                    <h3>Your Contributions</h3>
+                    <div class="amount">${personal.toLocaleString('en-US', {maximumFractionDigits: 0})}</div>
+                </div>
+                <div class="total-card">
+                    <h3>Employer Match</h3>
+                    <div class="amount">${employer.toLocaleString('en-US', {maximumFractionDigits: 0})}</div>
+                </div>
+                <div class="total-card">
+                    <h3>Investment Earnings</h3>
+                    <div class="amount">${earnings.toLocaleString('en-US', {maximumFractionDigits: 0})}</div>
+                </div>
+            `;
+        }
+        
+        function updateChart(balances, startAge) {
+            const labels = balances.map((_, i) => startAge + i);
+            
+            const ctx = document.getElementById('growthChart').getContext('2d');
+            
+            if (chart) {
+                chart.destroy();
+            }
+            
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '401k Balance',
+                        data: balances,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Retirement Savings Growth Over Time',
+                            font: {
+                                size: 18
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Age'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
