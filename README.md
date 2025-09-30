@@ -1,5 +1,8 @@
 # 401k Retirement Calculator
 
+## Preview
+https://jayjonesvip.github.io/401k-calc/
+
 ## Overview
 An interactive web-based 401k retirement savings calculator that helps users visualize their retirement savings growth from current age to retirement at 65. Features real-time adjustments with sliders and dynamic chart updates.
 
